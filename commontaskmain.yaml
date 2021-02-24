@@ -1,0 +1,51 @@
+all:
+  hosts:
+  become: true
+  tasks:
+  - name: install these dependencies using APT
+    apt:
+      pkg: 
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python3
+      - python3-pip
+      - python-setuptools
+      state: present
+      update_cache: true
+
+   - name: Get the Docker APT key
+     uri:
+       url: https://download.docker.com/linux/ubuntu/gpg
+       method: GET
+       return_content: yes
+
+   - name: Add the APT repo
+     ansible.builtin.apt_repository:
+       repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+       state: present
+
+   - name: Install docker-ce using APT
+     apt:
+       name: docker-ce
+       state: latest
+       update_cache:true
+
+  children:
+    group-1:
+      hosts:
+        - name: Init a new swarm with default parameters
+        community.docker.docker_swarm:
+          state: present
+
+    group-2:
+      hosts:
+        - name: Add nodes
+        community.docker.docker_swarm:
+        state: join
+        advertise_addr: 192.168.1.2
+        join_token: SWMTKN-1--xxxxx
+        remote_addrs: [ '192.168.1.1:2377' ]
+
+        
